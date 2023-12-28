@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>표준감사시간 계산기</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="Standardtime_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Standardtime_files/libs/quarto-html/quarto.js"></script>
+<script src="Standardtime_files/libs/quarto-html/popper.min.js"></script>
+<script src="Standardtime_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Standardtime_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Standardtime_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Standardtime_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Standardtime_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Standardtime_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Standardtime_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<meta name="shinylive:serviceworker_dir" content=".">
+<script src="Standardtime_files/libs/quarto-contrib/shinylive-0.2.3/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="Standardtime_files/libs/quarto-contrib/shinylive-0.2.3/shinylive/run-python-blocks.js" type="module"></script>
+<link href="Standardtime_files/libs/quarto-contrib/shinylive-0.2.3/shinylive/shinylive.css" rel="stylesheet">
+<link href="Standardtime_files/libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">표준감사시간 계산기</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<pre class="shinylive-r" data-engine="r"><code>#| standalone: true
+#| viewerHeight: 1000
+library(shiny)
+
+# Define Variables
+
+time &lt;- tibble::tribble(
+          ~group,   ~low,            ~high,  ~col1,  ~col2,  ~col3,  ~col4,  ~col5,  ~col6,
+              1L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              1L,  0,              5000000000000,    3770L,  4300L,  5280L,   2460L,  3410L,  2320L,
+              1L, 5000000000000,   10000000000000,   5110L,  5820L,  7150L,   3330L,  4620L,  3150L,
+              1L, 10000000000000,  20000000000000,   6930L,  7890L,  9690L,   4520L,  6260L,  4270L,
+              1L, 20000000000000,  50000000000000,   10360L, 11790L, 14480L,  6750L,  9360L,  6380L,
+              1L, 50000000000000,  100000000000000,  14040L, 15980L, 19630L,  9150L, 12690L,  8640L,
+              1L, 100000000000000, 200000000000000,  19030L, 21660L, 26600L,  12400L, 17200L, 11720L,
+              1L, 200000000000000, 300000000000000,  22730L, 25880L, 31780L,  14820L, 20540L, 14000L,
+              2L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              2L,  0,              1000000000000,    2560L,  2680L,  3090L,   1790L,  2700L,  2120L,
+              2L, 1000000000000,   2000000000000,    3120L,  3270L,  3770L,   2180L,  3290L,  2580L,
+              2L, 2000000000000,   3000000000000,    3500L,  3670L,  4230L,   2450L,  3700L,  2900L,
+              2L, 2000000000000,   4000000000000,    3800L,  3980L,  4590L,   2660L,  4010L,  3140L,
+              3L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              3L,  0,              300000000000,     1810L,  1890L,  2180L,   1260L,  1910L,  1490L,
+              3L, 300000000000,    500000000000,     1990L,  2090L,  2410L,   1390L,  2100L,  1650L,
+              3L, 500000000000,    800000000000,     2180L,  2290L,  2630L,   1520L,  2300L,  1800L,
+              3L, 800000000000,    1000000000000,    2280L,  2390L,  2750L,   1590L,  2400L,  1880L,
+              3L, 1000000000000,   1500000000000,    2460L,  2580L,  2970L,   1720L,  2600L,  2040L,
+              3L, 1500000000000,   2000000000000,    2600L,  2730L,  3140L,   1820L,  2740L,  2150L,
+              3L, 2000000000000,   5000000000000,    3100L,  3250L,  3740L,   2170L,  3270L,  2560L,
+              4L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              4L,  0,              50000000000,      1040L,  1090L,  1250L,   730L,  1100L,   860L,
+              4L, 50000000000,     100000000000,     1150L,  1200L,  1390L,   800L,  1210L,   950L,
+              4L, 100000000000,    200000000000,     1270L,  1330L,  1530L,   890L,  1340L,  1050L,
+              4L, 200000000000,    300000000000,     1340L,  1410L,  1620L,   940L,  1420L,  1110L,
+              4L, 300000000000,    400000000000,     1400L,  1470L,  1690L,   980L,  1480L,  1160L,
+              4L, 400000000000,    500000000000,     1440L,  1520L,  1750L,  1010L,  1530L,  1200L,
+              4L, 500000000000,    1000000000000,    1600L,  1670L,  1930L,  1120L,  1690L,  1320L,
+              5L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              5L,  0,              30000000000,      910L,   950L,  1100L,   640L,   960L,   750L,
+              5L, 30000000000,     50000000000,      990L,  1040L,  1200L,   690L,  1050L,   820L,
+              5L, 50000000000,     80000000000,      1070L,  1120L,  1290L,   750L,  1130L,   890L,
+              5L, 80000000000,     100000000000,     1110L,  1170L,  1340L,   780L,  1170L,   920L,
+              5L, 100000000000,    150000000000,     1190L,  1250L,  1440L,   830L,  1260L,   980L,
+              5L, 150000000000,    200000000000,     1250L,  1310L,  1510L,   870L,  1320L,  1030L,
+              6L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              6L,  0,              10000000000,      580L,   610L,   700L,   410L,   610L,   480L,
+              6L, 10000000000,     20000000000,      740L,   770L,   890L,   510L,   780L,   610L,
+              6L, 20000000000,     30000000000,      850L,   890L,  1020L,   590L,   890L,   700L,
+              6L, 30000000000,     40000000000,      930L,   980L,  1130L,   650L,   980L,   770L,
+              6L, 40000000000,     50000000000,      1010L,  1050L,  1210L,   700L,  1060L,   830L,
+              6L, 50000000000,     100000000000,     1270L,  1330L,  1540L,   890L,  1340L,  1050L,
+              7L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              7L,  0,              10000000000,      520L,   470L,   580L,   570L,   450L,   350L,
+              7L, 10000000000,     20000000000,      620L,   560L,   690L,   680L,   540L,   420L,
+              7L, 20000000000,     50000000000,      780L,   710L,   870L,   860L,   680L,   530L,
+              7L, 50000000000,     100000000000,     930L,   850L,  1040L,  1030L,   820L,   630L,
+              7L, 100000000000,    500000000000,     1400L,  1270L,  1560L,  1540L,  1230L,   950L,
+              7L, 500000000000,    1000000000000,    1670L,  1520L,  1870L,  1840L,  1470L,  1140L,
+              7L, 1000000000000,   5000000000000,    2520L,  2290L,  2810L,  2780L,  2210L,  1710L,
+              7L, 5000000000000,   10000000000000,   3000L,  2730L,  3350L,  3310L,  2640L,  2040L,
+              7L, 10000000000000,  50000000000000,   4530L,  4120L,  5050L,  4990L,  3970L,  3080L,
+              8L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              8L,  0,              50000000000,      690L,   480L,   600L,   630L,   620L,   190L,
+              8L, 50000000000,     100000000000,     750L,   530L,   660L,   690L,   680L,   210L,
+              8L, 100000000000,    200000000000,     830L,   590L,   730L,   760L,   750L,   230L,
+              8L, 200000000000,    500000000000,     940L,   660L,   820L,   860L,   850L,   260L,
+              8L, 500000000000,    1000000000000,    1030L,   730L,   910L,   950L,   940L,   290L,
+              8L, 1000000000000,   2000000000000,    1140L,   800L,  1000L,  1040L,  1030L,   320L,
+              8L, 2000000000000,   5000000000000,    1290L,   910L,  1130L,  1180L,  1170L,   360L,
+              8L, 5000000000000,   10000000000000,   1420L,  1000L,  1240L,  1300L,  1290L,   390L,
+              8L, 10000000000000,  50000000000000,   1770L,  1250L,  1550L,  1620L,  1600L,   490L,
+              9L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+              9L,  0,              20000000000,      450L,   350L,   380L,   390L,   400L,   380L,
+              9L, 20000000000,     50000000000,      550L,   440L,   470L,   480L,   500L,   470L,
+              9L, 50000000000,     60000000000,      580L,   460L,   490L,   500L,   520L,   490L,
+              9L, 60000000000,     70000000000,      600L,   470L,   510L,   510L,   540L,   510L,
+              9L, 70000000000,     80000000000,      620L,   490L,   530L,   530L,   560L,   530L,
+              9L, 80000000000,     90000000000,      630L,   500L,   540L,   550L,   570L,   540L,
+              9L, 90000000000,     100000000000,     650L,   510L,   560L,   560L,   590L,   560L,
+              9L, 100000000000,    200000000000,     760L,   600L,   650L,   660L,   690L,   650L,
+             10L,  0,              0,                0L,     0L,     0L,      0L,     0L,     0L,
+             10L,  0,              10000000000,      420L,   340L,   340L,   350L,   390L,   310L,
+             10L, 10000000000,     20000000000,      480L,   390L,   390L,   390L,   440L,   350L,
+             10L, 20000000000,     30000000000,      510L,   420L,   420L,   420L,   480L,   380L,
+             10L, 30000000000,     40000000000,      540L,   440L,   440L,   450L,   510L,   400L,
+             10L, 40000000000,     50000000000,      570L,   460L,   460L,   470L,   530L,   420L,
+             10L, 50000000000,     100000000000,     650L,   520L,   520L,   530L,   600L,   480L
+          )
+
+proficiency &lt;- tibble::tribble(
+                    ~`group`, ~`pro_rate`,
+                  "1",          0.783,
+                  "2",          0.777,
+                  "3",          0.767,
+                  "4",           0.76,
+                  "5",          0.753,
+                  "6",           0.76,
+                  "7",          0.765,
+                  "8",          0.728,
+                  "9",          0.713,
+                  "10",          0.703
+                 )
+
+
+
+yesno &lt;- c( "No", "Yes")
+sectors &lt;-  c("제조업", "서비스업", "건설업", "금융업", "도소매업", "기타")
+
+sectors_name &lt;- c("col1", "col2" ,"col3" ,"col4" ,"col5" ,"col6")
+names(sectors_name) &lt;- sectors
+
+
+listed_num &lt;- c("1" , "2" , "3" , "4" , "5" , "6")
+
+
+
+
+
+ui &lt;- fluidPage(
+
+    # Application title
+    titlePanel("표준감사시간 계산기 - 2022년 1월 개정 반영"),
+    h5('joyhhh@outlook.kr'),
+    h5('조이회계 | https://joy-accounting.netlify.com/'),
+
+    
+    
+    HTML('&lt;hr style="border-color: black;"&gt;'),
+    
+    fluidRow(
+        column(width = 4, style='padding-top:30px', 
+            sliderInput("bins",
+                        "예상 투입 인원의 가중평균 경력",
+                        min = 0,
+                        max = 15,
+                        value = 2),
+        ),
+    ),
+    
+    HTML('&lt;hr style="border-color: black;"&gt;'),
+    
+    fluidRow(
+        column(width = 4, style='padding-top:30px', 
+            numericInput('num1',label = '직전 사업연도말 자산 총액', min = 0, value = 900000000000),
+            numericInput('num2',label = '직전 사업연도말 매출액', min = 0, value = 500000000000),
+        ),
+        column(width = 4, style='padding-top:30px',
+            selectizeInput('sel_listed', '유가증권, 코스닥 상장', yesno, multiple = FALSE),
+            selectizeInput('sel_konex', '코넥스 상장 또는 사업보고서 제출 비상장', yesno, multiple = FALSE),
+        ),
+        column(width = 4, style='padding-top:30px',
+            numericInput('num5',label = '직전 사업연도말 연결 자산 총액', min = 0, value = 1350000000000),
+            numericInput('num6',label = '직전 사업연도말 연결 매출액', min = 0, value = 750000000000),
+        )
+    ),
+    
+    HTML('&lt;hr style="border-color: black;"&gt;'),
+    
+    fluidRow(
+        column(width = 4, offset = 5,
+            h3('↓그룹'),
+            textOutput('group'), 
+        ),
+    ),
+    
+    HTML('&lt;hr style="border-color: black;"&gt;'),
+    
+    fluidRow(
+        column(width = 4, style='padding-top:30px',
+            numericInput('num3',label = '직전 사업연도말 매출채권', min = 0, value = 20000000000),
+            numericInput('num4',label = '직전 사업연도말 재고자산', min = 0, value = 10000000000),
+        ),
+
+        column(width = 4, style='padding-top:30px',
+            selectizeInput('consol', '연결재무제표 작성?', yesno, multiple = FALSE),
+            numericInput('num9',label = '연결 자회사 수', min = 0, value = 0),
+        ),
+        
+        column(width = 4, style='padding-top:30px',
+            numericInput('num7',label = '직전 사업연도말 연결 매출채권', min = 0, value = 30000000000),
+            numericInput('num8',label = '직전 사업연도말 연결 재고자산', min = 0, value = 15000000000),
+               
+        )
+        
+    ),
+    
+    fluidRow(
+        column(width = 4,
+        uiOutput("risk1"),
+        ),
+        column(width = 4,
+        uiOutput("risk2"),
+        ),
+        column(width = 4,
+        uiOutput("test"),
+        ),
+        
+
+    ),
+
+    HTML('&lt;hr style="border-color: black;"&gt;'),
+    
+    
+    
+    # Show a plot of the generated distribution
+    fluidRow(
+        column(width = 4, style='padding-top:30px',
+            selectizeInput('sel_secor', '업종', sectors, multiple = FALSE),
+            
+            selectizeInput('sel11', '금융 지주사?', yesno, multiple = FALSE),
+            sliderInput("bins2",
+                        "금융 지주사 차감 (1~6그룹)",
+                        min = 0.25,
+                        max = 0.6,
+                        value = 0.6),
+            
+            selectizeInput('sel12', '비금융 지주사?', yesno, multiple = FALSE),
+            uiOutput("bins3"),
+            
+            selectizeInput('sel13', '초도감사?', yesno, multiple = FALSE),
+            uiOutput("bins4"),
+           
+        ),    
+            column(width = 4, style='padding-top:30px',
+            
+            selectizeInput('sel14', '당기순손실?', yesno, multiple = FALSE),
+            uiOutput("bins5"),
+            
+            selectizeInput('sel15', '비적정 의견?', yesno, multiple = FALSE),
+            sliderInput("bins6",
+                        "비적정 의견",
+                        min = 0,
+                        max = 0.45,
+                        value = 0.45),
+            selectizeInput('sel1', '미국 상장사', yesno, multiple = FALSE),
+            selectizeInput('sel2', 'IFRS?', yesno, multiple = FALSE),
+            sliderInput("bins7",
+                        "IFRS 가산율",
+                        min = 0.1,
+                        max = 0.2,
+                        value = 0.2),
+        ),
+        column(width = 4, style='padding-top:30px',
+            selectizeInput('sel3', '임의 반기 검토 (7~10그룹)', yesno, multiple = FALSE),
+            selectizeInput('sel4', '임의 분기 검토 (1~3그룹 제외)', yesno, multiple = FALSE),
+            selectizeInput('sel5', '표준감사시간 당해 최초 적용', yesno, multiple = FALSE),
+            numericInput('num10',label = '최초 적용 이전 감사시간', min = 0, value = 300),
+        )
+       
+    ),
+
+    
+    
+    HTML('&lt;hr style="border-color: black;"&gt;'),
+    fluidRow(
+        column(width = 4, style='padding-top:40px; padding-bottom:30px', offset = 5,
+               h3('↓표준감사시간'),
+               textOutput('calc')
+        ),
+    ),
+    
+
+    
+)
+
+# Define server logic
+server &lt;- function(input, output, session) {
+    
+
+    group &lt;- function(num1, num2, sel_listed, sel_konex, num5, num6){
+        scale &lt;- num1
+        scale2 &lt;- (num5 + num6) / 2
+        if(scale &gt;= 2000000000000 &amp; scale2 &gt;= 5000000000000){
+            1
+        } else if(sel_listed == "Yes" &amp; scale &gt;= 2000000000000){
+            2
+        } else if(sel_listed == "Yes" &amp; scale &gt;= 500000000000){
+            3
+        } else if(sel_listed == "Yes" &amp; scale &gt;= 100000000000){
+            4 
+        } else if(sel_listed == "Yes" &amp; scale &gt;= 50000000000){
+            5 
+        } else if(sel_listed == "Yes" &amp; scale &lt; 50000000000){
+            6 
+        } else if(sel_konex == "Yes"){
+            7 
+        } else if(sel_listed == "No" &amp; scale &gt;= 100000000000){
+            8 
+        } else if(sel_listed == "No" &amp; scale &gt;= 50000000000){
+            9 
+        } else if(sel_listed == "No" &amp; scale &gt;= 20000000000){
+            10 
+        } else {
+            NA
+        } 
+    }
+    
+    output$group &lt;- renderText({group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6)})
+
+    risk_acc &lt;- function(consol, ar, inventory, asset, car, cinv, casset){
+        if (consol == "No"){
+            (ar + inventory)/ asset
+        } else {
+            (car + cinv)/ casset
+        }
+    }
+    
+    
+    observeEvent(input$num9, { 
+        updateNumericInput(session, "num9", value = ({ if(!(is.numeric(input$num9))){0}
+            else if(!(is.null(input$num9) || is.na(input$num9))){
+                if(input$num9 &lt; 0){
+                    0 
+                } else {
+                    return (isolate(input$num9))
+                } 
+            } 
+            else{0}
+        })
+        )
+    })
+    
+
+   output$risk1 &lt;- renderUI({
+       
+       if(group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6) %in% listed_num){
+           if ( input$num9 &lt;= 10){
+               minkaw &lt;- 0.1
+               maxkaw &lt;- 0.4
+           } else if (input$num9 &gt; 10 &amp; input$num9 &lt;= 50) {
+               minkaw &lt;- 0.4
+               maxkaw &lt;- 0.7
+           } else if (input$num9 &gt; 50 &amp; input$num9 &lt;= 100){
+               minkaw &lt;- 0.7
+               maxkaw &lt;- 1
+           } else {
+               minkaw &lt;- 1
+               maxkaw &lt;- 1.45
+           }
+       } else {
+           if ( input$num9 &lt;= 10){
+               minkaw &lt;- 0.15
+               maxkaw &lt;- 0.35
+           } else if (input$num9 &gt; 10 &amp; input$num9 &lt;= 50) {
+               minkaw &lt;- 0.35
+               maxkaw &lt;- 0.6
+           } else if (input$num9 &gt; 50 &amp; input$num9 &lt;= 100){
+               minkaw &lt;- 0.6
+               maxkaw &lt;- 0.8
+           } else {
+               minkaw &lt;- 0.8
+               maxkaw &lt;- 1.1
+           }
+       }
+       
+       sliderInput("risk1","자회사 가산율",min=minkaw, max = maxkaw,value = maxkaw)
+           
+   })
+   
+   output$risk2 &lt;- renderUI({
+        
+       risk_rate &lt;- (input$num7 + input$num8)/ input$num5
+       risk_rate_no &lt;- (input$num3 + input$num4)/ input$num1
+
+              
+       if(group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6) %in% listed_num){
+            if(input$consol == "Yes"){
+                if ( risk_rate &lt;= 0.55){
+                    minkaw2 &lt;- 0.05
+                    maxkaw2 &lt;- 0.1
+                } else if (risk_rate &gt; 0.55 &amp; risk_rate &lt;= 0.9) {
+                    minkaw2 &lt;- 0.1
+                    maxkaw2 &lt;- 0.15
+                } else {
+                    minkaw2 &lt;- 0.15
+                    maxkaw2 &lt;- 0.2
+                }
+            } else {
+                if ( risk_rate_no &lt;= 0.55){
+                    minkaw2 &lt;- 0.05
+                    maxkaw2 &lt;- 0.1
+                } else if (risk_rate_no &gt; 0.55 &amp; risk_rate_no &lt;= 0.9) {
+                    minkaw2 &lt;- 0.1
+                    maxkaw2 &lt;- 0.15
+                } else {
+                    minkaw2 &lt;- 0.15
+                    maxkaw2 &lt;- 0.2
+                }
+            }
+       } else {
+           if(input$consol == "Yes"){
+               if ( risk_rate &lt;= 0.55){
+                   minkaw2 &lt;- 0.02
+                   maxkaw2 &lt;- 0.15
+               } else if (risk_rate &gt; 0.55 &amp; risk_rate &lt;= 0.9) {
+                   minkaw2 &lt;- 0.15
+                   maxkaw2 &lt;- 0.3
+               } else {
+                   minkaw2 &lt;- 0.3
+                   maxkaw2 &lt;- 0.35
+               }
+           } else {
+               if ( risk_rate_no &lt;= 0.55){
+                   minkaw2 &lt;- 0.02
+                   maxkaw2 &lt;- 0.15
+               } else if (risk_rate_no &gt; 0.55 &amp; risk_rate_no &lt;= 0.9) {
+                   minkaw2 &lt;- 0.15
+                   maxkaw2 &lt;- 0.3
+               } else {
+                   minkaw2 &lt;- 0.3
+                   maxkaw2 &lt;- 0.35
+               }
+           }
+       }
+       
+       sliderInput("risk2","위험계정 가산율",min=minkaw2, max = maxkaw2,value = maxkaw2)
+   })
+       
+    
+    
+    
+    output$bins3 &lt;- renderUI({
+        if(group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6) %in% listed_num){
+            minbins3 &lt;- 0.25
+            maxbins3 &lt;- 0.55
+        } else {
+            minbins3 &lt;- 0.3
+            maxbins3 &lt;- 0.5
+        }
+            
+    sliderInput("bins3",
+                "비금융 지주사 차감",
+                min = minbins3,
+                max = maxbins3,
+                value = maxbins3)
+    })    
+    
+    output$bins4 &lt;- renderUI({
+        if(group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6) %in% listed_num){
+            minbins4 &lt;- 0.05
+            maxbins4 &lt;- 0.2
+        } else {
+            minbins4 &lt;- 0.1
+            maxbins4 &lt;- 0.15
+        }
+        
+        sliderInput("bins4",
+                "초도감사 가산율",
+                min = minbins4,
+                max = maxbins4,
+                value = maxbins4)
+    })    
+    
+    output$bins5 &lt;- renderUI({
+        if(group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6) %in% listed_num){
+            minbins5 &lt;- 0.05
+            maxbins5 &lt;- 0.3
+        } else {
+            minbins5 &lt;- 0.02
+            maxbins5 &lt;- 0.2
+        }
+        
+        sliderInput("bins5",
+                  "당기순손실 가산율",
+                    min = minbins5,
+                    max = maxbins5,
+                    value = maxbins5)
+    })    
+        
+    scale_num &lt;- reactive({
+        switch (input$consol,
+            "Yes" = (input$num5 + input$num6) / 2,
+            "No" = (input$num1 + input$num2) / 2
+        )
+    })    
+    
+    sect &lt;- reactive({
+        input$sel_secor
+    })
+    
+    
+    group_num &lt;- reactive({
+        group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6)
+    })
+    
+    sel1_y &lt;- reactive({
+        ifelse(input$sel1 == "Yes", 1.4, 1)
+    })
+    
+    sel2_y &lt;- reactive({
+        ifelse(input$sel2 == "Yes", 1+input$bins7, 1)
+    })
+    
+    sel11_y &lt;- reactive({
+        ifelse(input$sel11 == "Yes", 1-input$bins2, 1)
+    })
+
+    sel12_y &lt;- reactive({
+        ifelse(input$sel12 == "Yes", 1-input$bins3, 1)
+    })
+    
+    sel13_y &lt;- reactive({
+        ifelse(input$sel13 == "Yes", 1+input$bins4, 1)
+    })
+    
+    sel14_y &lt;- reactive({
+        ifelse(input$sel14 == "Yes", 1+input$bins5, 1)
+    })
+    
+    sel15_y &lt;- reactive({
+        ifelse(input$sel15 == "Yes", 1+input$bins6, 1)
+    })
+    
+    
+        
+    sel3_y &lt;- reactive({
+        if (input$sel3 == "Yes"){
+            if (group_num() == "7"){
+                1.35
+            } else {
+                1.55
+            }
+        } else {
+            1
+        }
+    })
+    
+    sel4_y &lt;- reactive({
+        ifelse(input$sel4 == "Yes", 1.7, 1)
+    })
+    
+    max_bound &lt;- reactive({
+        if (input$sel5 == "Yes") {
+            if (group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6) %in% c("1","2")){
+                max_bound &lt;- input$num10 * 1.5
+            } else {
+                max_bound &lt;- input$num10 * 1.3
+            }
+        }
+    })
+    
+    min_bound &lt;- reactive({
+        input$num10
+    })
+        
+    
+    add_rate &lt;- reactive({
+        if(group(input$num1, input$num2, input$sel_listed, input$sel_konex, input$num5, input$num6) %in% listed_num){
+            ifelse(input$consol == "Yes", 
+                   (1+input$risk1) * (1+input$risk2) * sel11_y() * sel12_y() * sel13_y() * sel14_y() * sel15_y() * sel1_y() * sel4_y(),
+                   (1+input$risk2) * sel11_y() * sel12_y() * sel13_y() * sel14_y() * sel15_y() * sel1_y() * sel4_y())
+        } else {
+            ifelse(input$consol == "Yes", 
+                   (1+input$risk1) * (1+input$risk2) * sel12_y() * sel13_y() * sel14_y() * sel15_y() * sel2_y() * sel3_y() * sel4_y(),
+                   (1+input$risk2) * sel12_y() * sel13_y() * sel14_y() * sel15_y() * sel2_y() * sel3_y() * sel4_y())
+        }
+    })    
+        
+    
+
+    
+    
+    
+        
+    
+    profi &lt;- reactive({
+        
+        weight &lt;- if(input$bins == 0){
+            0.4
+        } else if(input$bins &gt; 0 &amp; input$bins &lt; 2 ){
+            0.8
+        } else if(input$bins &gt;=2 &amp; input$bins &lt; 6){
+            1
+        } else if(input$bins &gt;=6 &amp; input$bins &lt; 10){
+            1.1   
+        } else if(input$bins &gt;=10 &amp; input$bins &lt; 15){
+            1.15
+        } else {
+            1.2
+        }
+        
+        proficiency[proficiency["group"] == group_num(),2][[1]] / weight
+    })
+
+    
+    
+    calc_time &lt;- function() {
+        
+        group_time &lt;- time[time["group"] == group_num(),]
+        
+        if (group_time[nrow(group_time),"high"] &lt; scale_num()){
+            scale_num() /group_time[[nrow(group_time),"high"]] * group_time[[nrow(group_time),sectors_name[sect()]]]
+        
+        } else {
+            table_time &lt;- group_time[group_time["high"] &lt;= scale_num() ,][nrow(group_time[group_time["high"] &lt;= scale_num() ,]),][[sectors_name[sect()]]]
+            table_time_up &lt;- group_time[group_time["high"] &gt; scale_num() ,][1,][[sectors_name[sect()]]]
+            
+            low_num &lt;- group_time[group_time["high"]&lt;= scale_num() ,][nrow(group_time[group_time["high"]&lt;= scale_num() ,]),"high"][[1]]
+            high_num &lt;- group_time[group_time["high"]&gt; scale_num() ,][1 ,"high"][[1]]
+            
+            table_time + (scale_num() - low_num)/(high_num - low_num) * (table_time_up - table_time)
+        }
+        
+    }
+    
+
+    result_time &lt;- reactive({
+        if(input$sel5 == "Yes"){
+            if(calc_time() * add_rate() * profi() &gt; max_bound()) {
+                round(max_bound())
+            } else if (calc_time() * add_rate() * profi() &lt; min_bound()){
+                round(min_bound())
+            } else {
+                round(calc_time() * add_rate()  * profi())
+            }
+        } else {
+            round(calc_time() * add_rate()  * profi())
+        }
+        
+    })
+    
+    
+    output$calc &lt;- renderText({
+        round(result_time())
+    })
+    
+    
+    
+}
+# Run the application 
+shinyApp(ui = ui, server = server)</code></pre>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
