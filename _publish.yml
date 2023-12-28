@@ -1,0 +1,6 @@
+- source: Standardtime.qmd
+  quarto-pub:
+    - id: 59e67618-04d0-40f8-bc77-b5260fc64e13
+      url: 'https://joy-hhh.quarto.pub/표준감사시간-계산기'
+    - id: 0ee6fa92-7dbe-45b6-a881-59ec653c4e3a
+      url: 'https://joy-hhh.quarto.pub/standardtime'
