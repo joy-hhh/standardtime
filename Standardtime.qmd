@@ -1,5 +1,9 @@
 ---
 title: "표준감사시간 계산기"
+format:
+  html:
+    resources: 
+      - shinylive-sw.js
 filters:
   - shinylive
 ---
